@@ -1,4 +1,4 @@
-
+from validation import validate_invoice
 from ocr import extract_text
 from gemini_service import extract_invoice_data
 from fastapi.concurrency import run_in_threadpool
@@ -82,6 +82,8 @@ async def upload_invoice(file: UploadFile = File(...)):
         extracted_text
     )
 
+    # Validate extracted invoice data
+    validation_result = validate_invoice(invoice_data)
     await file.close()
 
     # Return OCR text and structured invoice data
@@ -91,5 +93,6 @@ async def upload_invoice(file: UploadFile = File(...)):
         "saved_filename": unique_filename,
         "size_bytes": len(content),
         "extracted_text": extracted_text,
-        "invoice_data": invoice_data.model_dump()
+        "invoice_data": invoice_data.model_dump(),
+        "validation": validation_result
     }
