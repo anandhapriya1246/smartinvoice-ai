@@ -7,11 +7,13 @@ from pydantic import BaseModel
 
 # Load environment variables
 load_dotenv()
+api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    raise ValueError("Gemini API key not found")
 
 # Initialize Gemini client
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
+client = genai.Client(api_key=api_key)
 
 # Define the invoice data structure
 class InvoiceData(BaseModel):
@@ -50,13 +52,27 @@ def extract_invoice_data(ocr_text: list[str]):
     {text}
     """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=InvoiceData
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=InvoiceData,
+                http_options=types.HttpOptions(
+                    timeout=30000
+                )
+            )
         )
-    )
+
+        if response.parsed is None:
+            raise ValueError("Gemini returned no structured invoice data")
+
+        return response.parsed
+
+    except Exception as error:
+        raise RuntimeError(
+            "Failed to extract invoice data using Gemini"
+        ) from error
 
     return response.parsed
