@@ -1,4 +1,6 @@
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
+
 def validate_required_fields(invoice):
     """
     Check whether required invoice fields are present.
@@ -9,6 +11,8 @@ def validate_required_fields(invoice):
         "invoice_number",
         "invoice_date",
         "customer_name",
+        "subtotal",
+        "tax",
         "total"
     ]
 
@@ -25,6 +29,7 @@ def validate_required_fields(invoice):
     return missing_fields
 
 
+
 def validate_amounts(invoice):
     """
     Check whether invoice amounts are valid.
@@ -36,13 +41,27 @@ def validate_amounts(invoice):
     for field in amount_fields:
         value = getattr(invoice, field, None)
 
-        if value is not None and value < 0:
-            errors.append(f"{field} cannot be negative")
+        # Skip unavailable optional amounts
+        if value is None:
+            continue
+
+        try:
+            amount = Decimal(str(value))
+
+            # Check for NaN or infinity
+            if not amount.is_finite():
+                errors.append(f"{field} must be a finite number")
+                continue
+
+            # Check for negative amounts
+            if amount < 0:
+                errors.append(f"{field} cannot be negative")
+
+        except (InvalidOperation, ValueError, TypeError):
+            errors.append(f"{field} must be a valid number")
 
     return errors
 
-
-from decimal import Decimal
 
 def validate_invoice_total(invoice):
     """
@@ -53,20 +72,29 @@ def validate_invoice_total(invoice):
     tax = invoice.tax
     total = invoice.total
 
-    # Skip calculation if any required amount is unavailable
+    # Skip calculation if required amounts are unavailable
     if subtotal is None or tax is None or total is None:
         return []
 
-    calculated_total = (
-        Decimal(str(subtotal)) + Decimal(str(tax))
-    )
+    try:
+        subtotal = Decimal(str(subtotal))
+        tax = Decimal(str(tax))
+        total = Decimal(str(total))
 
-    actual_total = Decimal(str(total))
+        # Ensure all amounts are finite
+        if not all(value.is_finite() for value in [subtotal, tax, total]):
+            return []
 
-    if abs(calculated_total - actual_total) > Decimal("0.01"):
-        return [
-            "Invoice total does not match subtotal + tax"
-        ]
+        calculated_total = subtotal + tax
+
+        if abs(calculated_total - total) > Decimal("0.01"):
+            return [
+                "Invoice total does not match subtotal + tax"
+            ]
+
+    except (InvalidOperation, ValueError, TypeError):
+        # Invalid amounts are reported by validate_amounts()
+        return []
 
     return []
 
@@ -87,8 +115,14 @@ def validate_invoice_dates(invoice):
             invoice_date = datetime.strptime(
                 invoice.invoice_date, "%Y-%m-%d"
             )
-        except ValueError:
-            errors.append("Invalid invoice date format")
+
+            # Ensure exact YYYY-MM-DD format
+            if invoice_date.strftime("%Y-%m-%d") != invoice.invoice_date:
+                errors.append("Invoice date must use YYYY-MM-DD format")
+                invoice_date = None
+
+        except (ValueError, TypeError):
+            errors.append("Invalid invoice date")
 
     # Validate due date
     if invoice.due_date:
@@ -96,8 +130,13 @@ def validate_invoice_dates(invoice):
             due_date = datetime.strptime(
                 invoice.due_date, "%Y-%m-%d"
             )
-        except ValueError:
-            errors.append("Invalid due date format")
+
+            if due_date.strftime("%Y-%m-%d") != invoice.due_date:
+                errors.append("Due date must use YYYY-MM-DD format")
+                due_date = None
+
+        except (ValueError, TypeError):
+            errors.append("Invalid due date")
 
     # Compare dates only if both are valid
     if invoice_date and due_date:
@@ -123,5 +162,7 @@ def validate_invoice(invoice):
 
     return {
         "is_valid": len(errors) == 0,
-        "errors": errors
+        "status": "valid" if len(errors) == 0 else "invalid",
+        "errors": errors,
+        "error_count": len(errors)
     }

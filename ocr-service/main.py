@@ -1,16 +1,27 @@
-from validation import validate_invoice
+
+import logging
+import uuid
+
+from pathlib import Path
+
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.concurrency import run_in_threadpool
+
 from ocr import extract_text
 from gemini_service import extract_invoice_data
-from fastapi.concurrency import run_in_threadpool
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from pathlib import Path
-import uuid
+from validation import validate_invoice
+
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
 
 app = FastAPI(
     title="SmartInvoice OCR Service",
     description="Python service for invoice processing",
     version="1.0.0"
 )
+
 
 # Folder where uploaded invoices will be stored
 UPLOAD_DIR = Path("uploads")
@@ -41,6 +52,8 @@ async def upload_invoice(file: UploadFile = File(...)):
     extension = Path(file.filename or "").suffix.lower()
 
     if extension not in ALLOWED_EXTENSIONS:
+        await file.close()
+
         raise HTTPException(
             status_code=400,
             detail="Only PDF, JPG, JPEG and PNG files are allowed"
@@ -48,6 +61,7 @@ async def upload_invoice(file: UploadFile = File(...)):
 
     # Read uploaded file
     content = await file.read()
+    await file.close()
 
     # Check file size
     if len(content) > MAX_FILE_SIZE:
@@ -56,6 +70,7 @@ async def upload_invoice(file: UploadFile = File(...)):
             detail="File size must not exceed 10 MB"
         )
 
+    # Check whether file is empty
     if len(content) == 0:
         raise HTTPException(
             status_code=400,
@@ -67,32 +82,58 @@ async def upload_invoice(file: UploadFile = File(...)):
 
     file_path = UPLOAD_DIR / unique_filename
 
-    # Save file
+    # Save uploaded file
     file_path.write_bytes(content)
 
-    # Extract text using PaddleOCR
-    extracted_text = await run_in_threadpool(
-        extract_text,
-        str(file_path)
-    )
+    try:
 
-    # Convert OCR text into structured invoice data using Gemini
-    invoice_data = await run_in_threadpool(
-        extract_invoice_data,
-        extracted_text
-    )
+        # Extract text using PaddleOCR
+        extracted_text = await run_in_threadpool(
+            extract_text,
+            str(file_path)
+        )
 
-    # Validate extracted invoice data
-    validation_result = validate_invoice(invoice_data)
-    await file.close()
+        # Check whether OCR extracted any text
+        if not extracted_text:
+            raise HTTPException(
+                status_code=422,
+                detail="No text could be extracted from the uploaded invoice"
+            )
 
-    # Return OCR text and structured invoice data
-    return {
-        "message": "Invoice uploaded and processed successfully!",
-        "original_filename": file.filename,
-        "saved_filename": unique_filename,
-        "size_bytes": len(content),
-        "extracted_text": extracted_text,
-        "invoice_data": invoice_data.model_dump(),
-        "validation": validation_result
-    }
+        # Extract structured invoice data using Gemini
+        try:
+            invoice_data = await run_in_threadpool(
+                extract_invoice_data,
+                extracted_text
+            )
+
+            if invoice_data is None:
+                raise ValueError("Gemini returned no invoice data")
+
+        except Exception as error:
+            logger.exception("Gemini invoice extraction failed")
+
+            raise HTTPException(
+                status_code=502,
+                detail="Invoice data extraction service is currently unavailable"
+            ) from error
+
+        # Validate extracted invoice data
+        validation_result = validate_invoice(invoice_data)
+
+        # Return processing results
+        return {
+            "message": "Invoice uploaded and processed successfully!",
+            "original_filename": file.filename,
+            "saved_filename": unique_filename,
+            "size_bytes": len(content),
+            "extracted_text": extracted_text,
+            "invoice_data": invoice_data.model_dump(),
+            "validation": validation_result
+        }
+
+    except Exception:
+        # Remove uploaded file if processing fails
+        file_path.unlink(missing_ok=True)
+
+        raise
