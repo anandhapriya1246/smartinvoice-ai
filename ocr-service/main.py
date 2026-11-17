@@ -1,4 +1,6 @@
+
 from ocr import extract_text
+from gemini_service import extract_invoice_data
 from fastapi.concurrency import run_in_threadpool
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pathlib import Path
@@ -68,18 +70,26 @@ async def upload_invoice(file: UploadFile = File(...)):
     # Save file
     file_path.write_bytes(content)
 
-    # Extract text using OCR
+    # Extract text using PaddleOCR
     extracted_text = await run_in_threadpool(
-    extract_text,
-    str(file_path)
-)
+        extract_text,
+        str(file_path)
+    )
+
+    # Convert OCR text into structured invoice data using Gemini
+    invoice_data = await run_in_threadpool(
+        extract_invoice_data,
+        extracted_text
+    )
 
     await file.close()
 
+    # Return OCR text and structured invoice data
     return {
-    "message": "Invoice uploaded and processed successfully!",
-    "original_filename": file.filename,
-    "saved_filename": unique_filename,
-    "size_bytes": len(content),
-    "extracted_text": extracted_text
-}
+        "message": "Invoice uploaded and processed successfully!",
+        "original_filename": file.filename,
+        "saved_filename": unique_filename,
+        "size_bytes": len(content),
+        "extracted_text": extracted_text,
+        "invoice_data": invoice_data.model_dump()
+    }
