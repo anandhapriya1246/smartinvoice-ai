@@ -38,3 +38,6 @@ __pycache__/
 *.png
 *.jpg
 *.jpeg
+
+ # OCR service generated files
+ ocr-service/uploads/
