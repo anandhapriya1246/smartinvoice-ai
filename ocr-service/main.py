@@ -85,9 +85,8 @@ async def upload_invoice(file: UploadFile = File(...)):
     # Save uploaded file
     file_path.write_bytes(content)
 
+    # Extract text using PaddleOCR
     try:
-
-        # Extract text using PaddleOCR
         extracted_text = await run_in_threadpool(
             extract_text,
             str(file_path)
@@ -100,40 +99,47 @@ async def upload_invoice(file: UploadFile = File(...)):
                 detail="No text could be extracted from the uploaded invoice"
             )
 
-        # Extract structured invoice data using Gemini
-        try:
-            invoice_data = await run_in_threadpool(
-                extract_invoice_data,
-                extracted_text
-            )
+    except Exception:
+        # Remove uploaded file if OCR processing fails
+        file_path.unlink(missing_ok=True)
+        raise
 
-            if invoice_data is None:
-                raise ValueError("Gemini returned no invoice data")
+    # Initialize processing results
+    invoice_data = None
+    validation_result = None
+    processing_status = "completed"
 
-        except Exception as error:
-            logger.exception("Gemini invoice extraction failed")
+    # Extract structured invoice data using Gemini
+    try:
+        invoice_data = await run_in_threadpool(
+            extract_invoice_data,
+            extracted_text
+        )
 
-            raise HTTPException(
-                status_code=502,
-                detail="Invoice data extraction service is currently unavailable"
-            ) from error
+        if invoice_data is None:
+            raise ValueError("Gemini returned no invoice data")
 
         # Validate extracted invoice data
         validation_result = validate_invoice(invoice_data)
 
-        # Return processing results
-        return {
-            "message": "Invoice uploaded and processed successfully!",
-            "original_filename": file.filename,
-            "saved_filename": unique_filename,
-            "size_bytes": len(content),
-            "extracted_text": extracted_text,
-            "invoice_data": invoice_data.model_dump(),
-            "validation": validation_result
-        }
-
     except Exception:
-        # Remove uploaded file if processing fails
-        file_path.unlink(missing_ok=True)
+        logger.exception("Gemini invoice extraction failed")
 
-        raise
+        # Preserve uploaded file and OCR text
+        processing_status = "processing_failed"
+
+    # Return processing results
+    return {
+        "message": "Invoice uploaded successfully!",
+        "original_filename": file.filename,
+        "saved_filename": unique_filename,
+        "size_bytes": len(content),
+        "extracted_text": extracted_text,
+        "invoice_data": (
+            invoice_data.model_dump()
+            if invoice_data is not None
+            else None
+        ),
+        "validation": validation_result,
+        "processing_status": processing_status
+    }

@@ -1,11 +1,14 @@
 const express = require("express");
+
 require("dotenv").config();
 
 const connectDB = require("./config/db");
+const invoiceRoutes = require("./routes/invoiceRoutes");
 
 const app = express();
 
 app.use(express.json());
+app.use("/api/invoices", invoiceRoutes);
 
 // Test API
 app.get("/", (req, res) => {
