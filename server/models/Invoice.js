@@ -2,22 +2,49 @@
 const mongoose = require("mongoose");
 
 const invoiceSchema = new mongoose.Schema(
-   {
-    vendor_name: {
-    type: String,
-    trim: true,
-    default: null
-  },
-
-    invoice_number: {
+  {
+    // Original uploaded file information
+    original_filename: {
       type: String,
       required: true,
       trim: true
     },
 
+    saved_filename: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    size_bytes: {
+      type: Number,
+      required: true
+    },
+
+    // OCR extracted text
+    extracted_text: {
+      type: [String],
+      default: []
+    },
+
+    // Invoice information extracted by Gemini
+    vendor_name: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null
+    },
+
+    invoice_number: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null
+    },
+
     invoice_date: {
       type: String,
-      required: true
+      default: null
     },
 
     due_date: {
@@ -27,20 +54,19 @@ const invoiceSchema = new mongoose.Schema(
 
     customer_name: {
       type: String,
-      required: true,
-      trim: true
+      trim: true,
+      lowercase: true,
+      default: null
     },
 
     subtotal: {
       type: Number,
-      required: true,
-      min: 0
+      default: null
     },
 
     tax: {
       type: Number,
-      required: true,
-      min: 0
+      default: null
     },
 
     total: {
@@ -53,16 +79,20 @@ const invoiceSchema = new mongoose.Schema(
       default: null
     },
 
+    // Processing status
+    processing_status: {
+      type: String,
+      enum: ["completed", "processing_failed"],
+      required: true
+    },
+
+    // Invoice validation results
     validation: {
-      is_valid: {
-        type: Boolean,
-        required: true
-      },
+      is_valid: Boolean,
 
       status: {
         type: String,
-        enum: ["valid", "invalid"],
-        required: true
+        enum: ["valid", "invalid"]
       },
 
       errors: {
@@ -81,6 +111,7 @@ const invoiceSchema = new mongoose.Schema(
   }
 );
 
+// Prevent duplicate invoices using business details
 invoiceSchema.index(
   {
     vendor_name: 1,
