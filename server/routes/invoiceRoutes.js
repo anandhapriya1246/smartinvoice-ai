@@ -21,13 +21,6 @@ const normalizeText = (value) => {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 };
 
-// Test invoice route
-router.get("/", (req, res) => {
-  res.json({
-    message: "Invoice API is working!"
-  });
-});
-
 // Forward invoice to Python OCR service
 
 router.post("/upload", upload.single("file"), async (req, res) => {
@@ -130,26 +123,55 @@ if (
 
 
 
-// Test invoice route
-router.get("/", (req, res) => {
-  res.json({
-    message: "Invoice API is working!"
-  });
-});
+// Get all invoices
+router.get("/", async (req, res) => {
+  try {
+    const invoices = await Invoice.find().sort({ createdAt: -1 });
 
-// Invoice upload route
-router.post("/upload", upload.single("file"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({
-      message: "Please upload an invoice file."
+    return res.status(200).json({
+      message: "Invoices retrieved successfully!",
+      count: invoices.length,
+      invoices
+    });
+
+  } catch (error) {
+    console.error("Error retrieving invoices:", error);
+
+    return res.status(500).json({
+      message: "Failed to retrieve invoices."
     });
   }
+});
 
-  res.json({
-    message: "Invoice file received successfully!",
-    original_filename: req.file.originalname,
-    file_size: req.file.size
-  });
+// Get a single invoice by ID
+router.get("/:id", async (req, res) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id);
+
+    if (!invoice) {
+      return res.status(404).json({
+        message: "Invoice not found."
+      });
+    }
+
+    return res.status(200).json({
+      message: "Invoice retrieved successfully!",
+      invoice
+    });
+
+  } catch (error) {
+    console.error("Error retrieving invoice:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid invoice ID."
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to retrieve invoice."
+    });
+  }
 });
 
 module.exports = router;
