@@ -283,3 +283,38 @@
   .recent-invoices tbody tr:hover {
     background-color: #f8fafc;
   }
+
+  /* Invoice action buttons */
+
+.invoice-action-button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.invoice-action-button:hover {
+  background-color: #1d4ed8;
+}
+
+.invoice-action-button:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.close-details-button {
+  background-color: #64748b;
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.close-details-button:hover {
+  background-color: #475569;
+}

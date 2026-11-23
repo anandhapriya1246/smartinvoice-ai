@@ -8,6 +8,9 @@ function App() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null)
   const [invoices, setInvoices] = useState([])
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true)
+  const [selectedInvoice, setSelectedInvoice] = useState(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [loadingInvoiceId, setLoadingInvoiceId] = useState(null)
 
 
   const fetchInvoices = async () => {
@@ -29,6 +32,33 @@ function App() {
 
     } finally {
       setIsLoadingInvoices(false)
+    }
+  }
+
+  const fetchInvoiceDetails = async (invoiceId) => {
+    try {
+      setIsLoadingDetails(true)
+      setLoadingInvoiceId(invoiceId)
+    
+      const response = await fetch(
+        `http://localhost:5000/api/invoices/${invoiceId}`
+      )
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to fetch invoice details')
+      }
+
+      setSelectedInvoice(result.invoice)
+
+    } catch (error) {
+      console.error('Error fetching invoice details:', error)
+      alert(error.message)
+
+    } finally {
+      setIsLoadingDetails(false)
+      setLoadingInvoiceId(null)
     }
   }
 
@@ -238,6 +268,7 @@ function App() {
                     <th>Invoice Number</th>
                     <th>Processing Status</th>
                     <th>Created At</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
 
@@ -251,6 +282,16 @@ function App() {
                       <td>
                         {new Date(invoice.createdAt).toLocaleDateString()}
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="invoice-action-button"
+                          onClick={() => fetchInvoiceDetails(invoice._id)}
+                          disabled={isLoadingDetails}
+                        >
+                          {loadingInvoiceId === invoice._id ? 'Loading...' : 'View Details'}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -258,7 +299,63 @@ function App() {
             </div>
           )}
         </section>
+        {isLoadingDetails && (
+          <p>Loading invoice details...</p>
+        )}
 
+        {selectedInvoice && (
+          <section className="invoice-result">
+            <h2>Selected Invoice Details</h2>
+            <button
+              type="button"
+              className="close-details-button"
+              onClick={() => setSelectedInvoice(null)}
+            >
+              Close Details
+            </button>
+            <div className="invoice-details">
+              <p>
+                <strong>Filename:</strong> {selectedInvoice.original_filename}
+              </p>
+
+              <p>
+                <strong>Vendor:</strong> {selectedInvoice.vendor_name || 'Not available'}
+              </p>
+
+              <p>
+                <strong>Invoice Number:</strong> {selectedInvoice.invoice_number || 'Not available'}
+              </p>
+
+              <p>
+                <strong>Invoice Date:</strong> {selectedInvoice.invoice_date || 'Not available'}
+              </p>
+
+              <p>
+                <strong>Customer:</strong> {selectedInvoice.customer_name || 'Not available'}
+              </p>
+
+              <p>
+                <strong>Total:</strong> {selectedInvoice.total ?? 'Not available'}
+              </p>
+
+              <p>
+                <strong>Processing Status:</strong> {selectedInvoice.processing_status}
+              </p>
+
+              <p>
+                <strong>Validation:</strong> {selectedInvoice.validation?.status || 'Not available'}
+              </p>
+            </div>
+
+            <h3>Extracted OCR Text</h3>
+
+            <div className="ocr-text">
+              {selectedInvoice.extracted_text?.map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+          </section>
+        )}
 
       </main>
     </div>
