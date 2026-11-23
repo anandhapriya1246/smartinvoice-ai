@@ -1,121 +1,141 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState('')
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setUploadMessage('Please select an invoice first.')
+      return
+    }
+
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setUploadMessage('File size must not exceed 10 MB.')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+
+    try {
+      setIsUploading(true)
+      setUploadMessage('Uploading invoice...')
+
+      const response = await fetch(
+        'http://localhost:5000/api/invoices/upload',
+        {
+          method: 'POST',
+          body: formData
+        }
+      )
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Invoice upload failed.')
+      }
+
+      setUploadMessage(result.message)
+
+    } catch (error) {
+      setUploadMessage(error.message)
+
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <aside className="sidebar">
+        <h2>SmartInvoice AI</h2>
 
-      <div className="ticks"></div>
+        <nav>
+          <a href="#" className="active">Dashboard</a>
+          <a href="#">All Invoices</a>
+          <a href="#">Upload Invoice</a>
+          <a href="#">Settings</a>
+        </nav>
+      </aside>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <main className="main-content">
+        <header className="dashboard-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Welcome back! Here's your invoice overview.</p>
+          </div>
+        </header>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <section className="summary-cards">
+          <div className="summary-card">
+            <h3>Total Invoices</h3>
+            <p>0</p>
+          </div>
+
+          <div className="summary-card">
+            <h3>Processed</h3>
+            <p>0</p>
+          </div>
+
+          <div className="summary-card">
+            <h3>Pending</h3>
+            <p>0</p>
+          </div>
+
+          <div className="summary-card">
+            <h3>Invalid</h3>
+            <p>0</p>
+          </div>
+        </section>
+
+        <section className="upload-section">
+          <h2>Upload Invoice</h2>
+          <p>Upload an invoice to extract and validate its information using AI.</p>
+
+          <div className="upload-box">
+            <p>Drag and drop your invoice here</p>
+            <p>or</p>
+
+            <input
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              id="invoice-file"
+              hidden
+              onChange={(event) => {
+                setSelectedFile(event.target.files[0])
+              }}
+            />
+
+            <label htmlFor="invoice-file" className="upload-button">
+              Choose File
+            </label>
+
+            {selectedFile && (
+              <p className="selected-file">
+                Selected file: {selectedFile.name}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={!selectedFile || isUploading}
+            >
+              {isUploading ? 'Uploading...' : 'Upload Invoice'}
+            </button>
+
+            {uploadMessage && (
+              <p>{uploadMessage}</p>
+            )}
+            
+            <small>Supported formats: PDF, PNG, JPG (Maximum 10 MB)</small>
+          </div>
+        </section>
+      </main>
+    </div>
   )
 }
 

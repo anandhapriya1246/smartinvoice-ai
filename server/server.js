@@ -1,3 +1,5 @@
+const cors = require("cors");
+
 const express = require("express");
 
 require("dotenv").config();
@@ -6,6 +8,9 @@ const connectDB = require("./config/db");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 
 const app = express();
+app.use(cors({
+  origin: "http://localhost:5173"
+}));
 
 app.use(express.json());
 app.use("/api/invoices", invoiceRoutes);
