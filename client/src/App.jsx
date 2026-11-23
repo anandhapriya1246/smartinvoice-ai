@@ -11,30 +11,30 @@ function App() {
 
 
   const fetchInvoices = async () => {
-  try {
-    const response = await fetch(
-      'http://localhost:5000/api/invoices'
-    )
+    try {
+      const response = await fetch(
+        'http://localhost:5000/api/invoices'
+      )
 
-    const result = await response.json()
+      const result = await response.json()
 
-    if (!response.ok) {
-      throw new Error(result.message || 'Failed to fetch invoices')
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to fetch invoices')
+      }
+
+      setInvoices(result.invoices)
+
+    } catch (error) {
+      console.error('Error fetching invoices:', error)
+
+    } finally {
+      setIsLoadingInvoices(false)
     }
-
-    setInvoices(result.invoices)
-
-  } catch (error) {
-    console.error('Error fetching invoices:', error)
-
-  } finally {
-    setIsLoadingInvoices(false)
   }
-}
 
-useEffect(() => {
-  fetchInvoices()
-}, [])
+  useEffect(() => {
+    fetchInvoices()
+  }, [])
 
   const handleUpload = async () => {
     if (!selectedFile) {
@@ -104,22 +104,34 @@ useEffect(() => {
         <section className="summary-cards">
           <div className="summary-card">
             <h3>Total Invoices</h3>
-            <p>0</p>
+            <p>{invoices.length}</p>
           </div>
 
           <div className="summary-card">
             <h3>Processed</h3>
-            <p>0</p>
+            <p>
+              {invoices.filter(
+                (invoice) => invoice.processing_status === 'completed'
+              ).length}
+            </p>
           </div>
 
           <div className="summary-card">
-            <h3>Pending</h3>
-            <p>0</p>
+            <h3>Processing Failed</h3>
+            <p>
+              {invoices.filter(
+                (invoice) => invoice.processing_status === 'processing_failed'
+              ).length}
+            </p>
           </div>
 
           <div className="summary-card">
             <h3>Invalid</h3>
-            <p>0</p>
+            <p>
+              {invoices.filter(
+                (invoice) => invoice.validation?.status === 'invalid'
+              ).length}
+            </p>
           </div>
         </section>
 
