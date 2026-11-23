@@ -1,4 +1,3 @@
-
 * {
   box-sizing: border-box;
 }
@@ -110,7 +109,7 @@
   font-size: 20px;
 }
 
-.upload-section > p {
+.upload-section>p {
   color: #64748b;
   font-size: 14px;
 }
@@ -177,3 +176,110 @@
   }
 }
 
+
+  /* Uploaded invoice result */
+
+  .invoice-result {
+    margin-top: 30px;
+    padding: 28px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .invoice-result h2 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 20px;
+  }
+
+  .invoice-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+  }
+
+  .invoice-details p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #475569;
+  }
+
+  .invoice-result h3 {
+    margin-top: 28px;
+    font-size: 17px;
+  }
+
+  .ocr-text {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+  }
+
+  .ocr-text p {
+    margin: 8px 0;
+    font-size: 13px;
+    color: #475569;
+  }
+
+  @media (max-width: 600px) {
+    .invoice-details {
+      grid-template-columns: 1fr;
+    }
+  }
+
+
+  /* Recent invoices table */
+
+  .recent-invoices {
+    margin-top: 30px;
+    padding: 28px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .recent-invoices h2 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 20px;
+  }
+
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .recent-invoices table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .recent-invoices th,
+  .recent-invoices td {
+    padding: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .recent-invoices th {
+    background-color: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .recent-invoices td {
+    color: #475569;
+  }
+
+  .recent-invoices tbody tr:hover {
+    background-color: #f8fafc;
+  }

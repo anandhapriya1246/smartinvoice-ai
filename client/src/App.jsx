@@ -1,10 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadMessage, setUploadMessage] = useState('')
+  const [uploadedInvoice, setUploadedInvoice] = useState(null)
+  const [invoices, setInvoices] = useState([])
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(true)
+
+
+  const fetchInvoices = async () => {
+  try {
+    const response = await fetch(
+      'http://localhost:5000/api/invoices'
+    )
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to fetch invoices')
+    }
+
+    setInvoices(result.invoices)
+
+  } catch (error) {
+    console.error('Error fetching invoices:', error)
+
+  } finally {
+    setIsLoadingInvoices(false)
+  }
+}
+
+useEffect(() => {
+  fetchInvoices()
+}, [])
 
   const handleUpload = async () => {
     if (!selectedFile) {
@@ -39,6 +69,8 @@ function App() {
       }
 
       setUploadMessage(result.message)
+      setUploadedInvoice(result.invoice)
+      await fetchInvoices()
 
     } catch (error) {
       setUploadMessage(error.message)
@@ -130,13 +162,96 @@ function App() {
             {uploadMessage && (
               <p>{uploadMessage}</p>
             )}
-            
+
             <small>Supported formats: PDF, PNG, JPG (Maximum 10 MB)</small>
           </div>
         </section>
+
+        {uploadedInvoice && (
+          <section className="invoice-result">
+            <h2>Uploaded Invoice Details</h2>
+
+            <div className="invoice-details">
+              <p>
+                <strong>Filename:</strong>{' '}
+                {uploadedInvoice.original_filename}
+              </p>
+
+              <p>
+                <strong>Processing Status:</strong>{' '}
+                {uploadedInvoice.processing_status}
+              </p>
+
+              <p>
+                <strong>Vendor:</strong>{' '}
+                {uploadedInvoice.vendor_name || 'Not available'}
+              </p>
+
+              <p>
+                <strong>Invoice Number:</strong>{' '}
+                {uploadedInvoice.invoice_number || 'Not available'}
+              </p>
+
+              <p>
+                <strong>Validation:</strong>{' '}
+                {uploadedInvoice.validation?.status || 'Not available'}
+              </p>
+            </div>
+
+            <h3>Extracted OCR Text</h3>
+
+            <div className="ocr-text">
+              {uploadedInvoice.extracted_text?.map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+          </section>
+        )}
+
+
+        <section className="recent-invoices">
+          <h2>Recent Invoices</h2>
+
+          {isLoadingInvoices ? (
+            <p>Loading invoices...</p>
+          ) : invoices.length === 0 ? (
+            <p>No invoices uploaded yet.</p>
+          ) : (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Filename</th>
+                    <th>Vendor</th>
+                    <th>Invoice Number</th>
+                    <th>Processing Status</th>
+                    <th>Created At</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {invoices.map((invoice) => (
+                    <tr key={invoice._id}>
+                      <td>{invoice.original_filename}</td>
+                      <td>{invoice.vendor_name || 'Not available'}</td>
+                      <td>{invoice.invoice_number || 'Not available'}</td>
+                      <td>{invoice.processing_status}</td>
+                      <td>
+                        {new Date(invoice.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+
       </main>
     </div>
   )
 }
+
 
 export default App
