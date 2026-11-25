@@ -9,6 +9,7 @@ function App() {
   const [invoices, setInvoices] = useState([])
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true)
   const [selectedInvoice, setSelectedInvoice] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [loadingInvoiceId, setLoadingInvoiceId] = useState(null)
 
@@ -39,7 +40,7 @@ function App() {
     try {
       setIsLoadingDetails(true)
       setLoadingInvoiceId(invoiceId)
-    
+
       const response = await fetch(
         `http://localhost:5000/api/invoices/${invoiceId}`
       )
@@ -61,6 +62,16 @@ function App() {
       setLoadingInvoiceId(null)
     }
   }
+
+  const filteredInvoices = invoices.filter((invoice) => {
+    const search = searchTerm.toLowerCase().trim()
+
+    return (
+      invoice.original_filename?.toLowerCase().includes(search) ||
+      invoice.vendor_name?.toLowerCase().includes(search) ||
+      invoice.invoice_number?.toLowerCase().includes(search)
+    )
+  })
 
   useEffect(() => {
     fetchInvoices()
@@ -253,7 +264,13 @@ function App() {
 
         <section className="recent-invoices">
           <h2>Recent Invoices</h2>
-
+          <input
+            type="text"
+            className="invoice-search"
+            placeholder="Search by filename, vendor, or invoice number..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           {isLoadingInvoices ? (
             <p>Loading invoices...</p>
           ) : invoices.length === 0 ? (
@@ -273,28 +290,36 @@ function App() {
                 </thead>
 
                 <tbody>
-                  {invoices.map((invoice) => (
-                    <tr key={invoice._id}>
-                      <td>{invoice.original_filename}</td>
-                      <td>{invoice.vendor_name || 'Not available'}</td>
-                      <td>{invoice.invoice_number || 'Not available'}</td>
-                      <td>{invoice.processing_status}</td>
-                      <td>
-                        {new Date(invoice.createdAt).toLocaleDateString()}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="invoice-action-button"
-                          onClick={() => fetchInvoiceDetails(invoice._id)}
-                          disabled={isLoadingDetails}
-                        >
-                          {loadingInvoiceId === invoice._id ? 'Loading...' : 'View Details'}
-                        </button>
-                      </td>
+                  {filteredInvoices.length === 0 ? (
+                    <tr>
+                      <td colSpan="6">No matching invoices found.</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredInvoices.map((invoice) => (
+                      <tr key={invoice._id}>
+                        <td>{invoice.original_filename}</td>
+                        <td>{invoice.vendor_name || 'Not available'}</td>
+                        <td>{invoice.invoice_number || 'Not available'}</td>
+                        <td>{invoice.processing_status}</td>
+                        <td>
+                          {new Date(invoice.createdAt).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="invoice-action-button"
+                            onClick={() => fetchInvoiceDetails(invoice._id)}
+                            disabled={isLoadingDetails}
+                          >
+                            {loadingInvoiceId === invoice._id ? 'Loading...' : 'View Details'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
+
+
               </table>
             </div>
           )}
@@ -336,6 +361,17 @@ function App() {
 
               <p>
                 <strong>Total:</strong> {selectedInvoice.total ?? 'Not available'}
+              </p>
+              <p>
+                <strong>Subtotal:</strong> {selectedInvoice.subtotal ?? 'Not available'}
+              </p>
+
+              <p>
+                <strong>Tax:</strong> {selectedInvoice.tax ?? 'Not available'}
+              </p>
+
+              <p>
+                <strong>Currency:</strong> {selectedInvoice.currency || 'Not available'}
               </p>
 
               <p>

@@ -177,114 +177,117 @@
 }
 
 
-  /* Uploaded invoice result */
+/* Uploaded invoice result */
 
-  .invoice-result {
-    margin-top: 30px;
-    padding: 28px;
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
+.invoice-result {
+  margin-top: 30px;
+  padding: 28px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
 
-  .invoice-result h2 {
-    margin-top: 0;
-    margin-bottom: 24px;
-    font-size: 20px;
-  }
+.invoice-result h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 20px;
+}
 
+.invoice-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  padding: 24px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.invoice-details p {
+  margin: 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.invoice-result h3 {
+  margin-top: 28px;
+  font-size: 17px;
+}
+
+.ocr-text {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 15px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.ocr-text p {
+  margin: 8px 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+@media (max-width: 600px) {
   .invoice-details {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 20px;
-    background-color: #f8fafc;
-    border-radius: 8px;
+    grid-template-columns: 1fr;
+    padding: 16px;
   }
-
-  .invoice-details p {
-    margin: 5px 0;
-    font-size: 14px;
-    color: #475569;
-  }
-
-  .invoice-result h3 {
-    margin-top: 28px;
-    font-size: 17px;
-  }
-
-  .ocr-text {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 15px;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-  }
-
-  .ocr-text p {
-    margin: 8px 0;
-    font-size: 13px;
-    color: #475569;
-  }
-
-  @media (max-width: 600px) {
-    .invoice-details {
-      grid-template-columns: 1fr;
-    }
-  }
+}
 
 
-  /* Recent invoices table */
+/* Recent invoices table */
 
-  .recent-invoices {
-    margin-top: 30px;
-    padding: 28px;
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
+.recent-invoices {
+  margin-top: 30px;
+  padding: 28px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
 
-  .recent-invoices h2 {
-    margin-top: 0;
-    margin-bottom: 24px;
-    font-size: 20px;
-  }
+.recent-invoices h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 20px;
+}
 
-  .table-container {
-    width: 100%;
-    overflow-x: auto;
-  }
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
 
-  .recent-invoices table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-  }
+.recent-invoices table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
 
-  .recent-invoices th,
-  .recent-invoices td {
-    padding: 15px;
-    border-bottom: 1px solid #e2e8f0;
-    font-size: 13px;
-    white-space: nowrap;
-  }
+.recent-invoices th,
+.recent-invoices td {
+  padding: 15px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  white-space: nowrap;
+}
 
-  .recent-invoices th {
-    background-color: #f8fafc;
-    color: #64748b;
-    font-weight: 600;
-  }
+.recent-invoices th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+}
 
-  .recent-invoices td {
-    color: #475569;
-  }
+.recent-invoices td {
+  color: #475569;
+}
 
-  .recent-invoices tbody tr:hover {
-    background-color: #f8fafc;
-  }
+.recent-invoices tbody tr:hover {
+  background-color: #f8fafc;
+}
 
-  /* Invoice action buttons */
+/* Invoice action buttons */
 
 .invoice-action-button {
   background-color: #2563eb;
@@ -317,4 +320,22 @@
 
 .close-details-button:hover {
   background-color: #475569;
+}
+/* Invoice Search */
+
+.invoice-search {
+  width: 100%;
+  max-width: 450px;
+  padding: 11px 14px;
+  margin: 15px 0 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.invoice-search:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
