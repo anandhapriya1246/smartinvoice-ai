@@ -310,6 +310,8 @@ function App() {
             <p>Loading invoices...</p>
           ) : invoices.length === 0 ? (
             <p>No invoices uploaded yet.</p>
+          ) : filteredInvoices.length === 0 ? (
+          <p>No matching invoices found. Try a different search or filter.</p>
           ) : (
             <div className="table-container">
               <table>
@@ -358,6 +360,7 @@ function App() {
               </table>
             </div>
           )}
+          {totalPages > 1 && (
           <div className="pagination">
             <button
               type="button"
@@ -379,6 +382,7 @@ function App() {
               Next
             </button>
           </div>
+        )}
         </section>
         {isLoadingDetails && (
           <p>Loading invoice details...</p>
