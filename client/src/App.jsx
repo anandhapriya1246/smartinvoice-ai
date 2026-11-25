@@ -10,8 +10,10 @@ function App() {
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true)
   const [selectedInvoice, setSelectedInvoice] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [loadingInvoiceId, setLoadingInvoiceId] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
 
   const fetchInvoices = async () => {
@@ -66,12 +68,30 @@ function App() {
   const filteredInvoices = invoices.filter((invoice) => {
     const search = searchTerm.toLowerCase().trim()
 
-    return (
+    const matchesSearch =
       invoice.original_filename?.toLowerCase().includes(search) ||
       invoice.vendor_name?.toLowerCase().includes(search) ||
       invoice.invoice_number?.toLowerCase().includes(search)
-    )
+
+    const matchesStatus =
+      statusFilter === 'all' ||
+      invoice.processing_status === statusFilter
+
+    return matchesSearch && matchesStatus
   })
+
+  const invoicesPerPage = 5
+
+  const totalPages = Math.ceil(
+    filteredInvoices.length / invoicesPerPage
+  )
+
+  const startIndex = (currentPage - 1) * invoicesPerPage
+
+  const currentInvoices = filteredInvoices.slice(
+    startIndex,
+    startIndex + invoicesPerPage
+  )
 
   useEffect(() => {
     fetchInvoices()
@@ -269,8 +289,23 @@ function App() {
             className="invoice-search"
             placeholder="Search by filename, vendor, or invoice number..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setCurrentPage(1)
+            }}
           />
+          <select
+            className="invoice-status-filter"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+          >
+            <option value="all">All Statuses</option>
+            <option value="completed">Completed</option>
+            <option value="processing_failed">Processing Failed</option>
+          </select>
           {isLoadingInvoices ? (
             <p>Loading invoices...</p>
           ) : invoices.length === 0 ? (
@@ -295,7 +330,7 @@ function App() {
                       <td colSpan="6">No matching invoices found.</td>
                     </tr>
                   ) : (
-                    filteredInvoices.map((invoice) => (
+                    currentInvoices.map((invoice) => (
                       <tr key={invoice._id}>
                         <td>{invoice.original_filename}</td>
                         <td>{invoice.vendor_name || 'Not available'}</td>
@@ -323,6 +358,27 @@ function App() {
               </table>
             </div>
           )}
+          <div className="pagination">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
         </section>
         {isLoadingDetails && (
           <p>Loading invoice details...</p>
